@@ -48,12 +48,12 @@ python -m bert.run_squad_document_full_e2e \
   --num_train_epochs 2.0 \
   --output_dir out/squad_doc/01
 ```
-In our experiment, the model was trained with 4 NVIDIA TESLA P100 (16GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as:
+In our experiment, the model was trained with 4 NVIDIA TESLA P100 (16GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as (
+these changes might cause performance degradation.):
 - train_batch_size: total batch size for training.
 - n_para_train: the number of paragraph retrieved by TF-IDF during training (denoted as `K` in our paper).
 - n_best_size_rank: the number of segments retrieved by early-stopped retriever (denoted as `N` in our paper).
 - num_hidden_rank: the number of Transformer blocks used for retrieving (denoted as `J` in our paper).
-Notice that the above changes might cause performance degradation.
 - gradient_accumulation_steps: number of updates steps to accumulate before performing a backward/update pass.
 - optimize_on_cpu: whether to perform optimization and keep the optimizer averages on CPU.
 
