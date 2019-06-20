@@ -2,7 +2,7 @@
 
 This repo contains the code of the following paper:
 
-<i> "Retrieve, Read, Rerank: Towards End-to-End Multi-Document Reading Comprehension". Minghao Hu, Yuxing Peng, Zhen Huang, Dongsheng Li. ACL 2019.</i>
+<i> [Retrieve, Read, Rerank: Towards End-to-End Multi-Document Reading Comprehension](https://arxiv.org/abs/1906.04618). Minghao Hu, Yuxing Peng, Zhen Huang, Dongsheng Li. ACL 2019.</i>
 
 In this paper, we propose an end-to-end neural network for the multi-document reading comprehension task, which is shown as below:
 <p>
