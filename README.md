@@ -186,7 +186,7 @@ If you find the paper or this repository helpful in your work, please use the fo
 @inproceedings{hu2019retrieve,
   title={Retrieve, Read, Rerank: Towards End-to-End Multi-Document Reading Comprehension},
   author={Hu, Minghao and Peng, Yuxing and Huang, Zhen and Li, Dongsheng},
-  booktitle={ACL},
+  booktitle={Proceedings of ACL},
   year={2019}
 }
 ```
