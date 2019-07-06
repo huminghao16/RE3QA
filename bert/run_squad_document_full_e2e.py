@@ -570,8 +570,6 @@ def run_train_epoch(args, global_step, model, param_optimizer,
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
             'step': global_step,
-            'epoch': epoch,
-            'best_f1': best_f1
         }, save_path)
     return global_step, model, best_f1
 
@@ -793,15 +791,13 @@ def main():
     elif n_gpu > 1 or args.data_parallel:
         model = torch.nn.DataParallel(model)
 
-    global_step, global_epoch, best_f1 = 0, 1, 0
+    global_step, best_f1 = 0, 0
     if os.path.isfile(save_path):
         checkpoint = torch.load(save_path)
         model.load_state_dict(checkpoint['model'])
         global_step = checkpoint['step']
-        global_epoch = checkpoint['epoch'] + 1
-        best_f1 = checkpoint['best_f1']
-        logger.info("Loading model from finetuned checkpoint: '{}' (step {}, epoch {})"
-                    .format(save_path, checkpoint['step'], checkpoint['epoch']))
+        logger.info("Loading model from finetuned checkpoint: '{}' (step {})"
+                    .format(save_path, checkpoint['step']))
 
     f = open(network_path, "w")
     for n, param in model.named_parameters():
@@ -813,7 +809,7 @@ def main():
     print("Total parameters: {}".format(total_params), file=f)
     f.close()
 
-    if args.do_train and global_epoch < int(args.num_train_epochs) + 1:
+    if args.do_train:
         logger.info("***** Preparing training *****")
         args.train_batch_size = int(args.train_batch_size / args.gradient_accumulation_steps)
         train_examples, train_rank_features, train_read_features, train_rank_dataloader, train_read_dataloader, \
@@ -847,8 +843,8 @@ def main():
                         .format(save_path, checkpoint['step'], checkpoint['epoch']))
 
         logger.info("***** Running training *****")
-        for epoch in range(global_epoch, int(args.num_train_epochs) + 1):
-            logger.info("***** Epoch: {} *****".format(epoch))
+        for epoch in range(int(args.num_train_epochs)):
+            logger.info("***** Epoch: {} *****".format(epoch+1))
             global_step, model, best_f1 = run_train_epoch(args, global_step, model, param_optimizer, train_examples,
                                                           train_read_features, train_rank_dataloader, train_read_dataloader,
                                                           optimizer, n_gpu, device, eval_examples,
@@ -856,7 +852,7 @@ def main():
                                                           eval_rank_dataloader, eval_read_dataloader, logger, log_path,
                                                           save_path, best_f1, epoch)
 
-            if epoch < args.num_train_epochs:
+            if epoch + 1 < args.num_train_epochs:
                 logger.info("***** Running training distillation *****")
                 run_rank_eval(args, global_step, model, device, train_examples, train_rank_features, train_distill_dataloader,
                               logger, log_path, save_path=None, type='distill', n_para=args.n_para_train,

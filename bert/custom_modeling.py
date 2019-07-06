@@ -2,13 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
 import copy
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from bert.modeling import BertConfig, BertModel, BERTLayerNorm, BERTLayer, BERTEmbeddings, BERTPooler, gelu
+from bert.modeling import BertConfig, BERTLayerNorm, BERTLayer, BERTEmbeddings, BERTPooler
 
 def flatten(x):
     if len(x.size()) == 2:
@@ -168,93 +167,6 @@ class EarlyStopBertModel(nn.Module):
         pooled_output = self.pooler(sequence_output)
         return all_encoder_layers, pooled_output
 
-class BertFeedForward(nn.Module):
-    def __init__(self, config, input_size, intermediate_size, output_size):
-        super(BertFeedForward, self).__init__()
-        self.dense = nn.Linear(input_size, intermediate_size)
-        self.affine = nn.Linear(intermediate_size, output_size)
-        self.act_fn = gelu \
-            if isinstance(config.hidden_act, str) else config.hidden_act
-        self.LayerNorm = BERTLayerNorm(config)
-
-    def forward(self, hidden_states):
-        hidden_states = self.dense(hidden_states)
-        hidden_states = self.act_fn(hidden_states)
-        hidden_states = self.LayerNorm(hidden_states)
-        hidden_states = self.affine(hidden_states)
-        return hidden_states
-
-class NormalFeedForward(nn.Module):
-    def __init__(self, config, input_size, intermediate_size, output_size):
-        super(NormalFeedForward, self).__init__()
-        self.dense = nn.Linear(input_size, intermediate_size)
-        self.affine = nn.Linear(intermediate_size, output_size)
-        self.act_fn = nn.Tanh()
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-
-    def forward(self, hidden_states):
-        hidden_states = self.dense(hidden_states)
-        hidden_states = self.act_fn(hidden_states)
-        hidden_states = self.dropout(hidden_states)
-        hidden_states = self.affine(hidden_states)
-        return hidden_states
-
-class BertForSequenceClassificationWithSelfAtt(nn.Module):
-    """BERT model for classification.
-    This module is composed of the BERT model with a linear layer on top of
-    the pooled output.
-
-    Example usage:
-    ```python
-    # Already been converted into WordPiece token ids
-    input_ids = torch.LongTensor([[31, 51, 99], [15, 5, 0]])
-    input_mask = torch.LongTensor([[1, 1, 1], [1, 1, 0]])
-    token_type_ids = torch.LongTensor([[0, 0, 1], [0, 2, 0]])
-
-    config = BertConfig(vocab_size=32000, hidden_size=512,
-        num_hidden_layers=8, num_attention_heads=6, intermediate_size=1024)
-
-    num_labels = 2
-
-    model = BertForSequenceClassification(config, num_labels)
-    logits = model(input_ids, token_type_ids, input_mask)
-    ```
-    """
-    def __init__(self, config, use_bert_ffn):
-        super(BertForSequenceClassificationWithSelfAtt, self).__init__()
-        self.bert = BertModel(config)
-        if use_bert_ffn:
-            self.rank_ffn = BertFeedForward(config, config.hidden_size, config.hidden_size, 2)
-        else:
-            self.rank_ffn = NormalFeedForward(config, config.hidden_size, config.hidden_size, 2)
-        self.rank_affine = nn.Linear(config.hidden_size, 1)
-
-        def init_weights(module):
-            if isinstance(module, (nn.Linear, nn.Embedding)):
-                # Slightly different from the TF version which uses truncated_normal for initialization
-                # cf https://github.com/pytorch/pytorch/pull/5617
-                module.weight.data.normal_(mean=0.0, std=config.initializer_range)
-            elif isinstance(module, BERTLayerNorm):
-                module.beta.data.normal_(mean=0.0, std=config.initializer_range)
-                module.gamma.data.normal_(mean=0.0, std=config.initializer_range)
-            if isinstance(module, nn.Linear):
-                module.bias.data.zero_()
-        self.apply(init_weights)
-
-    def forward(self, input_ids, token_type_ids, attention_mask, labels=None):
-        all_encoder_layers, pooled_output = self.bert(input_ids, token_type_ids, attention_mask)
-        sequence_output = all_encoder_layers[-1]
-
-        sequence_weights = self.rank_affine(sequence_output).squeeze(-1)
-        pooled_output = get_self_att_representation(sequence_output, sequence_weights, attention_mask)
-        logits = self.rank_ffn(pooled_output)
-
-        if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(logits, labels)
-            return loss, logits
-        else:
-            return logits
 
 class BertForRankingAndReadingAndReranking(nn.Module):
     def __init__(self, config, num_hidden_rank):
@@ -262,13 +174,16 @@ class BertForRankingAndReadingAndReranking(nn.Module):
         self.num_hidden_rank = num_hidden_rank
         self.num_hidden_read = config.num_hidden_layers
         self.bert = EarlyStopBertModel(config)
-
+        # TODO check with Google if it's normal there is no dropout on the token classifier of SQuAD in the TF version
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.activation = nn.Tanh()
         self.rank_affine = nn.Linear(config.hidden_size, 1)
+        self.rank_dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.rank_classifier = nn.Linear(config.hidden_size, 2)
         self.read_affine = nn.Linear(config.hidden_size, 2)
         self.rerank_affine = nn.Linear(config.hidden_size, 1)
-
-        self.rank_ffn = NormalFeedForward(config, config.hidden_size, config.hidden_size, 2)
-        self.rerank_ffn = NormalFeedForward(config, config.hidden_size, config.hidden_size, 1)
+        self.rerank_dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.rerank_classifier = nn.Linear(config.hidden_size, 1)
 
         def init_weights(module):
             if isinstance(module, (nn.Linear, nn.Embedding)):
@@ -292,7 +207,11 @@ class BertForRankingAndReadingAndReranking(nn.Module):
 
             sequence_weights = self.rank_affine(sequence_output).squeeze(-1)
             pooled_output = get_self_att_representation(sequence_output, sequence_weights, attention_mask)
-            rank_logits = self.rank_ffn(pooled_output)
+
+            pooled_output = self.rank_dense(pooled_output)
+            pooled_output = self.activation(pooled_output)
+            pooled_output = self.dropout(pooled_output)
+            rank_logits = self.rank_classifier(pooled_output)
 
             if rank_labels is not None:
                 rank_loss_fct = CrossEntropyLoss()
@@ -320,8 +239,11 @@ class BertForRankingAndReadingAndReranking(nn.Module):
             span_weights = self.rerank_affine(span_output).squeeze(-1)
             span_pooled_output = get_self_att_representation(span_output, span_weights, span_mask)    # [N*M, D]
 
-            rerank_logits = self.rerank_ffn(span_pooled_output).squeeze(-1)
-            rerank_logits = reconstruct(rerank_logits, span_starts)  # [N, M]
+            span_pooled_output = self.rerank_dense(span_pooled_output)
+            span_pooled_output = self.activation(span_pooled_output)
+            span_pooled_output = self.dropout(span_pooled_output)
+            rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
+            rerank_logits = reconstruct(rerank_logits, span_starts)
             return rerank_logits
 
         elif mode == 'read_rerank_train':
@@ -351,12 +273,17 @@ class BertForRankingAndReadingAndReranking(nn.Module):
             read_loss = (start_loss + end_loss) / 2
 
             assert span_starts is not None and span_ends is not None and hard_labels is not None and soft_labels is not None
-            span_output, span_mask = get_span_representation(span_starts, span_ends, sequence_output, attention_mask)  # [N*M, JR, D], [N*M, JR]
-            span_weights = self.rerank_affine(span_output).squeeze(-1)  # [N*M, JR]
-            span_pooled_output = get_self_att_representation(span_output, span_weights, span_mask)  # [N*M, D]
+            span_output, span_mask = get_span_representation(span_starts, span_ends, sequence_output,
+                                                             attention_mask)  # [N*M, JR, D], [N*M, JR]
+            span_score = self.rerank_affine(span_output)
+            span_score = span_score.squeeze(-1)  # [N*M, JR]
+            span_pooled_output = get_self_att_representation(span_output, span_score, span_mask)  # [N*M, D]
 
-            rerank_logits = self.rerank_ffn(span_pooled_output).squeeze(-1)
-            rerank_logits = reconstruct(rerank_logits, span_starts) # [N, M]
+            span_pooled_output = self.rerank_dense(span_pooled_output)
+            span_pooled_output = self.activation(span_pooled_output)
+            span_pooled_output = self.dropout(span_pooled_output)
+            rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
+            rerank_logits = reconstruct(rerank_logits, span_starts)
             norm_rerank_logits = rerank_logits / torch.sum(rerank_logits, -1, True)
 
             hard_loss = distant_cross_entropy(rerank_logits, hard_labels)
@@ -371,16 +298,20 @@ class BertForRankingAndReadingAndReranking(nn.Module):
 class BertForRankingAndDistantReadingAndReranking(nn.Module):
     def __init__(self, config, num_hidden_rank):
         super(BertForRankingAndDistantReadingAndReranking, self).__init__()
+        super(BertForRankingAndDistantReadingAndReranking, self).__init__()
         self.num_hidden_rank = num_hidden_rank
         self.num_hidden_read = config.num_hidden_layers
         self.bert = EarlyStopBertModel(config)
-
+        # TODO check with Google if it's normal there is no dropout on the token classifier of SQuAD in the TF version
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.activation = nn.Tanh()
         self.rank_affine = nn.Linear(config.hidden_size, 1)
+        self.rank_dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.rank_classifier = nn.Linear(config.hidden_size, 2)
         self.read_affine = nn.Linear(config.hidden_size, 2)
         self.rerank_affine = nn.Linear(config.hidden_size, 1)
-
-        self.rank_ffn = NormalFeedForward(config, config.hidden_size, config.hidden_size, 2)
-        self.rerank_ffn = NormalFeedForward(config, config.hidden_size, config.hidden_size, 1)
+        self.rerank_dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.rerank_classifier = nn.Linear(config.hidden_size, 1)
 
         def init_weights(module):
             if isinstance(module, (nn.Linear, nn.Embedding)):
@@ -404,7 +335,11 @@ class BertForRankingAndDistantReadingAndReranking(nn.Module):
 
             sequence_weights = self.rank_affine(sequence_output).squeeze(-1)
             pooled_output = get_self_att_representation(sequence_output, sequence_weights, attention_mask)
-            rank_logits = self.rank_ffn(pooled_output)
+
+            pooled_output = self.rank_dense(pooled_output)
+            pooled_output = self.activation(pooled_output)
+            pooled_output = self.dropout(pooled_output)
+            rank_logits = self.rank_classifier(pooled_output)
 
             if rank_labels is not None:
                 rank_loss_fct = CrossEntropyLoss()
@@ -429,11 +364,14 @@ class BertForRankingAndDistantReadingAndReranking(nn.Module):
             span_output, span_mask = get_span_representation(span_starts, span_ends, sequence_input,
                                                              attention_mask)  # [N*M, JR, D], [N*M, JR]
 
-            span_weights = self.rerank_affine(span_output).squeeze(-1) # [N*M, JR]
+            span_weights = self.rerank_affine(span_output).squeeze(-1)
             span_pooled_output = get_self_att_representation(span_output, span_weights, span_mask)    # [N*M, D]
 
-            rerank_logits = self.rerank_ffn(span_pooled_output).squeeze(-1)
-            rerank_logits = reconstruct(rerank_logits, span_starts)  # [N, M]
+            span_pooled_output = self.rerank_dense(span_pooled_output)
+            span_pooled_output = self.activation(span_pooled_output)
+            span_pooled_output = self.dropout(span_pooled_output)
+            rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
+            rerank_logits = reconstruct(rerank_logits, span_starts)
             return rerank_logits
 
         elif mode == 'read_rerank_train':
@@ -454,11 +392,15 @@ class BertForRankingAndDistantReadingAndReranking(nn.Module):
             assert span_starts is not None and span_ends is not None and hard_labels is not None and soft_labels is not None
             span_output, span_mask = get_span_representation(span_starts, span_ends, sequence_output,
                                                              attention_mask)  # [N*M, JR, D], [N*M, JR]
-            span_weights = self.rerank_affine(span_output).squeeze(-1)  # [N*M, JR]
-            span_pooled_output = get_self_att_representation(span_output, span_weights, span_mask)  # [N*M, D]
+            span_score = self.rerank_affine(span_output)
+            span_score = span_score.squeeze(-1)  # [N*M, JR]
+            span_pooled_output = get_self_att_representation(span_output, span_score, span_mask)  # [N*M, D]
 
-            rerank_logits = self.rerank_ffn(span_pooled_output).squeeze(-1)
-            rerank_logits = reconstruct(rerank_logits, span_starts) # [N, M]
+            span_pooled_output = self.rerank_dense(span_pooled_output)
+            span_pooled_output = self.activation(span_pooled_output)
+            span_pooled_output = self.dropout(span_pooled_output)
+            rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
+            rerank_logits = reconstruct(rerank_logits, span_starts)
             norm_rerank_logits = rerank_logits / torch.sum(rerank_logits, -1, True)
 
             hard_loss = distant_cross_entropy(rerank_logits, hard_labels)
