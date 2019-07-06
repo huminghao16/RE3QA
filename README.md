@@ -102,13 +102,13 @@ tar xf triviaqa-unfiltered.tar.gz
 rm triviaqa-unfiltered.tar.gz
 ```
 
-First tokenize the evidence documents by
+First tokenize evidence documents by
 ```shell
 python -m triviaqa.evidence_corpus --n_processes 8 --max_tokens 200
 ```
 where paragraphs that are less than 200 words are merged.
 
-Then tokenize the questions and locate the relevant answers spans in each document. Run
+Then tokenize questions and locate relevant answers spans in each document. Run
 ```shell
 python -m triviaqa.build_span_corpus {wiki|unfiltered} --n_processes 8
 ```
