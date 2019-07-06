@@ -16,18 +16,18 @@ This network consists of three components:
 
 Given multiple documents, the network is designed to retrieve relevant document content, propose multiple answer candidates, and finally rerank these candidates. We utilize [BERT](https://github.com/huggingface/pytorch-pretrained-BERT) to initialize our network. The whole network is trained end-to-end with a multi-task objective.
 
+## Pre-trained Models
+To reproduce our results, we release the following pre-trained models:
+- [squad_doc_base](https://drive.google.com/file/d/16lTmN2wu31QdUvExW_fGcDJxKnR7f912/view?usp=sharing)
+- [triviaqa_wiki_base](https://drive.google.com/file/d/1Re_2KxBlCQ9_sxTmkZGoahjX72c1eCfk/view?usp=sharing)
+- [triviaqa_unfiltered_base](https://drive.google.com/file/d/1kqF40UhJAC6XkAbywI-YMIg_C5t0oS2Q/view?usp=sharing)
+
 ## Requirements
 - Python 3.6
 - [Pytorch 1.1](https://pytorch.org/)
 - [Allennlp](https://allennlp.org/)
 
 Download the uncased [BERT-Base](https://drive.google.com/file/d/13I0Gj7v8lYhW5Hwmp5kxm3CTlzWZuok2/view?usp=sharing) model and unzip it in the current directory. 
-
-## Pre-trained Models
-To reproduce our results, we release the following pre-trained models:
-- [squad_doc_base](https://drive.google.com/file/d/16lTmN2wu31QdUvExW_fGcDJxKnR7f912/view?usp=sharing)
-- [triviaqa_wiki_base](https://drive.google.com/file/d/1Re_2KxBlCQ9_sxTmkZGoahjX72c1eCfk/view?usp=sharing)
-- [triviaqa_unfiltered_base](https://drive.google.com/file/d/1kqF40UhJAC6XkAbywI-YMIg_C5t0oS2Q/view?usp=sharing)
 
 ## SQuAD-document
 To run experiments on the SQuAD-document dataset, first set up the environment:
