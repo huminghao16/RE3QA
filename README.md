@@ -106,6 +106,7 @@ cd ..
 wget http://nlp.cs.washington.edu/triviaqa/data/triviaqa-unfiltered.tar.gz
 tar xf triviaqa-unfiltered.tar.gz
 rm triviaqa-unfiltered.tar.gz
+cd ..
 ```
 
 First tokenize evidence documents by
