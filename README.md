@@ -96,7 +96,7 @@ The raw TriviaQA data is expected to be unzipped in `data/triviaqa`. Training
 or testing in the unfiltered setting requires the unfiltered data to be 
 download to `data/triviaqa-unfiltered`.
 ```bash
-mkdir -p /data/triviaqa
+mkdir -p data/triviaqa
 cd /data/triviaqa
 wget http://nlp.cs.washington.edu/triviaqa/data/triviaqa-rc.tar.gz
 tar xf triviaqa-rc.tar.gz
