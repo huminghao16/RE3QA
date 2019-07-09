@@ -92,17 +92,17 @@ Reader, type: test_open, step: 19332, em: 40.123, f1: 48.358
 
 ## TriviaQA
 ### Data Preprocessing
-The raw TriviaQA data is expected to be unzipped in `~/data/triviaqa`. Training
+The raw TriviaQA data is expected to be unzipped in `data/triviaqa`. Training
 or testing in the unfiltered setting requires the unfiltered data to be 
-download to `~/data/triviaqa-unfiltered`.
+download to `data/triviaqa-unfiltered`.
 ```bash
-mkdir -p ~/data/triviaqa
-cd ~/data/triviaqa
+mkdir -p /data/triviaqa
+cd /data/triviaqa
 wget http://nlp.cs.washington.edu/triviaqa/data/triviaqa-rc.tar.gz
 tar xf triviaqa-rc.tar.gz
 rm triviaqa-rc.tar.gz
 
-cd ~/data
+cd ..
 wget http://nlp.cs.washington.edu/triviaqa/data/triviaqa-unfiltered.tar.gz
 tar xf triviaqa-unfiltered.tar.gz
 rm triviaqa-unfiltered.tar.gz
@@ -170,6 +170,7 @@ python -m bert.run_triviaqa_wiki_full_e2e  \
   --do_train \
   --do_dev \
   --data_dir $DATA_DIR \
+  --dev_file unfiltered-web-dev.json
   --train_batch_size 32 \
   --learning_rate 3e-5 \
   --num_train_epochs 2.0 \
