@@ -125,6 +125,8 @@ Next, retrieve top-n paragraphs based on TF-IDF to construct the train and dev s
 ```shell
 python -m triviaqa.ablate_triviaqa_wiki --n_processes 8 --n_para_train 12 --n_para_dev 14 --n_para_test 14 --do_train --do_dev --do_test
 python -m triviaqa.ablate_triviaqa_unfiltered --n_processes 8 --n_para_train 12 --n_para_dev 14 --n_para_test 14 --do_train --do_dev --do_test
+cp data/triviaqa/qa/wikipedia-dev.json data/triviaqa/wiki/
+cp data/triviaqa-unfiltered/unfiltered-web-dev.json data/triviaqa/unfiltered/
 ```
 
 ### Wikipedia Domain
@@ -171,7 +173,7 @@ python -m bert.run_triviaqa_wiki_full_e2e  \
   --do_train \
   --do_dev \
   --data_dir $DATA_DIR \
-  --dev_file unfiltered-web-dev.json
+  --dev_file unfiltered-web-dev.json \
   --train_batch_size 32 \
   --learning_rate 3e-5 \
   --num_train_epochs 2.0 \

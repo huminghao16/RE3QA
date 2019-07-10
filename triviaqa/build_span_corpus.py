@@ -13,6 +13,7 @@ from triviaqa.evidence_corpus import TriviaQaEvidenceCorpusTxt
 from triviaqa.answer_detection import compute_answer_spans_par, FastNormalizedAnswerDetector
 
 TRIVIA_QA = join("data", "triviaqa")
+TRIVIA_QA_UNFILTERED = join("data", "triviaqa-unfiltered")
 
 
 def build_dataset(name: str, tokenizer, train_files: Dict[str, str],
@@ -23,7 +24,6 @@ def build_dataset(name: str, tokenizer, train_files: Dict[str, str],
         mkdir(out_dir)
 
     file_map = {}  # maps document_id -> filename
-
     for name, filename in train_files.items():
         print("Loading %s questions" % name)
         if sample is None:
@@ -123,58 +123,58 @@ class TriviaQaSampleUnfilteredDataset(TriviaQaSpanCorpus):
 def build_wiki_corpus(n_processes):
     build_dataset("wiki", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      verified=join(TRIVIA_QA, "wiki", "verified-wikipedia-dev.json"),
-                      dev=join(TRIVIA_QA, "wiki", "wikipedia-dev.json"),
-                      train=join(TRIVIA_QA, "wiki", "wikipedia-train.json"),
-                      test=join(TRIVIA_QA, "wiki", "wikipedia-test-without-answers.json")
+                      verified=join(TRIVIA_QA, "qa", "verified-wikipedia-dev.json"),
+                      dev=join(TRIVIA_QA, "qa", "wikipedia-dev.json"),
+                      train=join(TRIVIA_QA, "qa", "wikipedia-train.json"),
+                      test=join(TRIVIA_QA, "qa", "wikipedia-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes)
 
 def build_web_corpus(n_processes):
     build_dataset("web", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      verified=join(TRIVIA_QA, "web", "verified-web-dev.json"),
-                      dev=join(TRIVIA_QA, "web", "web-dev.json"),
-                      train=join(TRIVIA_QA, "web", "web-train.json"),
-                      test=join(TRIVIA_QA, "web", "web-test-without-answers.json")
+                      verified=join(TRIVIA_QA, "qa", "verified-web-dev.json"),
+                      dev=join(TRIVIA_QA, "qa", "web-dev.json"),
+                      train=join(TRIVIA_QA, "qa", "web-train.json"),
+                      test=join(TRIVIA_QA, "qa", "web-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes)
 
 def build_unfiltered_corpus(n_processes):
     build_dataset("unfiltered", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      dev=join(TRIVIA_QA, "unfiltered", "unfiltered-web-dev.json"),
-                      train=join(TRIVIA_QA, "unfiltered", "unfiltered-web-train.json"),
-                      test=join(TRIVIA_QA, "unfiltered", "unfiltered-web-test-without-answers.json")
+                      dev=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-dev.json"),
+                      train=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-train.json"),
+                      test=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes)
 
 def build_wiki_sample_corpus(n_processes):
     build_dataset("wiki-sample", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      verified=join(TRIVIA_QA, "wiki-sample", "verified-wikipedia-dev.json"),
-                      dev=join(TRIVIA_QA, "wiki-sample", "wikipedia-dev.json"),
-                      train=join(TRIVIA_QA, "wiki-sample", "wikipedia-train.json"),
-                      test=join(TRIVIA_QA, "wiki-sample", "wikipedia-test-without-answers.json")
+                      verified=join(TRIVIA_QA, "qa", "verified-wikipedia-dev.json"),
+                      dev=join(TRIVIA_QA, "qa", "wikipedia-dev.json"),
+                      train=join(TRIVIA_QA, "qa", "wikipedia-train.json"),
+                      test=join(TRIVIA_QA, "qa", "wikipedia-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes, sample=20)
 
 def build_web_sample_corpus(n_processes):
     build_dataset("web-sample", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      verified=join(TRIVIA_QA, "web-sample", "verified-web-dev.json"),
-                      dev=join(TRIVIA_QA, "web-sample", "web-dev.json"),
-                      train=join(TRIVIA_QA, "web-sample", "web-train.json"),
-                      test=join(TRIVIA_QA, "web-sample", "web-test-without-answers.json")
+                      verified=join(TRIVIA_QA, "qa", "verified-web-dev.json"),
+                      dev=join(TRIVIA_QA, "qa", "web-dev.json"),
+                      train=join(TRIVIA_QA, "qa", "web-train.json"),
+                      test=join(TRIVIA_QA, "qa", "web-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes, sample=20)
 
 def build_unfiltered_sample_corpus(n_processes):
     build_dataset("unfiltered-sample", tokenization.BasicTokenizer(do_lower_case=True),
                   dict(
-                      dev=join(TRIVIA_QA, "unfiltered-sample", "unfiltered-web-dev.json"),
-                      train=join(TRIVIA_QA, "unfiltered-sample", "unfiltered-web-train.json"),
-                      test=join(TRIVIA_QA, "unfiltered-sample", "unfiltered-web-test-without-answers.json")
+                      dev=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-dev.json"),
+                      train=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-train.json"),
+                      test=join(TRIVIA_QA_UNFILTERED, "unfiltered-web-test-without-answers.json")
                   ),
                   FastNormalizedAnswerDetector(), n_processes, sample=20)
 
