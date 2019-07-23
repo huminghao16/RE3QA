@@ -25,7 +25,6 @@ To reproduce our results, we release the following pre-trained models:
 ## Requirements
 - Python 3.6
 - [Pytorch 1.1](https://pytorch.org/)
-- [Allennlp](https://allennlp.org/)
 
 Download the uncased [BERT-Base](https://drive.google.com/file/d/13I0Gj7v8lYhW5Hwmp5kxm3CTlzWZuok2/view?usp=sharing) model and unzip it in the current directory. 
 
