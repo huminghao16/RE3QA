@@ -53,7 +53,7 @@ python -m bert.run_squad_document_full_e2e \
   --num_train_epochs 2.0 \
   --output_dir out/squad_doc/01
 ```
-In our experiment, the model was trained with 4 NVIDIA TESLA P100 (16GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as (
+In our experiment, the model was trained with 4 NVIDIA TESLA P40 (22GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as (
 these changes might cause performance degradation.):
 - `--train_batch_size`: total batch size for training.
 - `--n_para_train`: the number of paragraph retrieved by TF-IDF during training (denoted as `K` in our paper).
@@ -61,6 +61,25 @@ these changes might cause performance degradation.):
 - `--num_hidden_rank`: the number of Transformer blocks used for retrieving (denoted as `J` in our paper).
 - `--gradient_accumulation_steps`: number of updates steps to accumulate before performing a backward/update pass.
 - `--optimize_on_cpu`: whether to perform optimization and keep the optimizer averages on CPU.
+
+The base model can be trained on 2 Geforce GTX TITAN (12GB memory per card) with the following command:
+```shell
+python -m bert.run_squad_document_full_e2e \
+  --vocab_file $BERT_DIR/vocab.txt \
+  --bert_config_file $BERT_DIR/bert_config.json \
+  --init_checkpoint $BERT_DIR/pytorch_model.bin \
+  --do_train \
+  --do_predict \
+  --data_dir $DATA_DIR \
+  --train_file train-v1.1.json \
+  --predict_file dev-v1.1.json \
+  --train_batch_size 32 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2.0 \
+  --optimize_on_cpu \
+  --gradient_accumulation_steps 4 \
+  --output_dir out/squad_doc/01
+```
 
 Finally, you can get a dev result from `out/squad_doc/01/performance.txt` like this:
 ```bash
