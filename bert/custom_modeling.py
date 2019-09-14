@@ -284,11 +284,10 @@ class BertForRankingAndReadingAndReranking(nn.Module):
             span_pooled_output = self.dropout(span_pooled_output)
             rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
             rerank_logits = reconstruct(rerank_logits, span_starts)
-            norm_rerank_logits = rerank_logits / torch.sum(rerank_logits, -1, True)
 
             hard_loss = distant_cross_entropy(rerank_logits, hard_labels)
             soft_loss_fct = MSELoss()
-            soft_loss = soft_loss_fct(norm_rerank_logits, soft_labels.to(dtype=rerank_logits.dtype))
+            soft_loss = soft_loss_fct(rerank_logits, soft_labels.to(dtype=rerank_logits.dtype))
             rerank_loss = hard_loss + soft_loss
             return read_loss + rerank_loss
 
@@ -401,11 +400,10 @@ class BertForRankingAndDistantReadingAndReranking(nn.Module):
             span_pooled_output = self.dropout(span_pooled_output)
             rerank_logits = self.rerank_classifier(span_pooled_output).squeeze(-1)
             rerank_logits = reconstruct(rerank_logits, span_starts)
-            norm_rerank_logits = rerank_logits / torch.sum(rerank_logits, -1, True)
 
             hard_loss = distant_cross_entropy(rerank_logits, hard_labels)
             soft_loss_fct = MSELoss()
-            soft_loss = soft_loss_fct(norm_rerank_logits, soft_labels.to(dtype=rerank_logits.dtype))
+            soft_loss = soft_loss_fct(rerank_logits, soft_labels.to(dtype=rerank_logits.dtype))
             rerank_loss = hard_loss + soft_loss
             return read_loss + rerank_loss
 

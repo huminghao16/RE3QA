@@ -797,8 +797,8 @@ def main():
         if os.path.isfile(save_path):
             checkpoint = torch.load(save_path)
             optimizer.load_state_dict(checkpoint['optimizer'])
-            logger.info("Load optimizer from finetuned checkpoint: '{}' (step {}, epoch {})"
-                        .format(save_path, checkpoint['step'], checkpoint['epoch']))
+            logger.info("Load optimizer from finetuned checkpoint: '{}' (step {})"
+                        .format(save_path, checkpoint['step']))
 
         logger.info("***** Running training *****")
         for epoch in range(int(args.num_train_epochs)):
