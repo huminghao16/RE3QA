@@ -53,7 +53,7 @@ python -m bert.run_squad_document_full_e2e \
   --num_train_epochs 2.0 \
   --output_dir out/squad_doc/01
 ```
-In our experiment, the model was trained with 4 NVIDIA TESLA P40 (22GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as (
+All experiments in our paper were conducted on 4 NVIDIA TESLA P40 (22GB memory per card). The training took nearly 22 hours to converge. If you do not have enough GPU capacity, you can change several hyper-parameters such as (
 these changes might cause performance degradation.):
 - `--train_batch_size`: total batch size for training.
 - `--n_para_train`: the number of paragraph retrieved by TF-IDF during training (denoted as `K` in our paper).
