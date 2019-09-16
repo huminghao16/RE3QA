@@ -1,7 +1,7 @@
 import argparse
 import re
 from os import walk, mkdir, makedirs
-from os.path import relpath, join, exists, expanduser
+from os.path import relpath, join, exists
 from typing import Set
 from tqdm import tqdm
 from typing import List
@@ -10,7 +10,7 @@ import bert.tokenization as tokenization
 from triviaqa.utils import split, flatten_iterable, group
 from triviaqa.read_data import normalize_wiki_filename
 
-TRIVIA_QA = join(expanduser("~"), "data", "triviaqa")
+TRIVIA_QA = join("data", "triviaqa")
 
 class MergeParagraphs(object):
     def __init__(self, max_tokens: int):

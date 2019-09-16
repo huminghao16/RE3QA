@@ -5,15 +5,15 @@ import unicodedata
 from itertools import islice
 from typing import List, Optional, Dict
 from os import mkdir
-from os.path import join, exists, expanduser
+from os.path import join, exists
 import bert.tokenization as tokenization
 from triviaqa.configurable import Configurable
 from triviaqa.read_data import iter_trivia_question, TriviaQaQuestion
 from triviaqa.evidence_corpus import TriviaQaEvidenceCorpusTxt
 from triviaqa.answer_detection import compute_answer_spans_par, FastNormalizedAnswerDetector
 
-TRIVIA_QA = join(expanduser("~"), "data", "triviaqa")
-TRIVIA_QA_UNFILTERED = join(expanduser("~"), "data", "triviaqa-unfiltered")
+TRIVIA_QA = join("data", "triviaqa")
+TRIVIA_QA_UNFILTERED = join("data", "triviaqa-unfiltered")
 
 
 def build_dataset(name: str, tokenizer, train_files: Dict[str, str],
@@ -24,7 +24,6 @@ def build_dataset(name: str, tokenizer, train_files: Dict[str, str],
         mkdir(out_dir)
 
     file_map = {}  # maps document_id -> filename
-
     for name, filename in train_files.items():
         print("Loading %s questions" % name)
         if sample is None:
